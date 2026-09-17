@@ -16,3 +16,11 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions) {
         //
     })->create();
+
+// Ensure storage path is in /tmp on Vercel serverless environment
+if (isset($_SERVER['VERCEL']) || isset($_ENV['VERCEL']) || getenv('VERCEL') || isset($_ENV['APP_STORAGE']) || getenv('APP_STORAGE')) {
+    $storagePath = $_ENV['APP_STORAGE'] ?? getenv('APP_STORAGE') ?: '/tmp/storage';
+    $app->useStoragePath($storagePath);
+}
+
+return $app;

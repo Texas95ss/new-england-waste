@@ -25,13 +25,28 @@ if (file_exists($sourceDb) && !file_exists($targetDb)) {
 }
 
 // 3. Set environment override untuk folder yang wajib writable
+if (!getenv('APP_KEY')) {
+    putenv('APP_KEY=base64:xthK6QsPEOHY21YFDOiOqMj0fPCig77zrmfrYuS5zCU=');
+    $_ENV['APP_KEY'] = 'base64:xthK6QsPEOHY21YFDOiOqMj0fPCig77zrmfrYuS5zCU=';
+}
+
+putenv('APP_STORAGE=/tmp/storage');
+$_ENV['APP_STORAGE'] = '/tmp/storage';
+
 putenv('VIEW_COMPILED_PATH=/tmp/storage/framework/views');
-putenv('APP_CONFIG_CACHE=/tmp/bootstrap/cache/config.php');
-putenv('APP_SERVICES_CACHE=/tmp/bootstrap/cache/services.php');
-putenv('APP_PACKAGES_CACHE=/tmp/bootstrap/cache/packages.php');
-putenv('APP_ROUTES_CACHE=/tmp/bootstrap/cache/routes.php');
+$_ENV['VIEW_COMPILED_PATH'] = '/tmp/storage/framework/views';
+
+putenv('APP_CONFIG_CACHE=/tmp/config.php');
+putenv('APP_SERVICES_CACHE=/tmp/services.php');
+putenv('APP_PACKAGES_CACHE=/tmp/packages.php');
+putenv('APP_ROUTES_CACHE=/tmp/routes.php');
+putenv('APP_EVENTS_CACHE=/tmp/events.php');
+
 putenv('DB_DATABASE=/tmp/database.sqlite');
+$_ENV['DB_DATABASE'] = '/tmp/database.sqlite';
+
 putenv('APP_TIMEZONE=UTC');
+$_ENV['APP_TIMEZONE'] = 'UTC';
 date_default_timezone_set('UTC');
 
 // 4. Panggil file public/index.php bawaan Laravel
