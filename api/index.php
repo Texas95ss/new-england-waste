@@ -31,6 +31,8 @@ putenv('APP_SERVICES_CACHE=/tmp/bootstrap/cache/services.php');
 putenv('APP_PACKAGES_CACHE=/tmp/bootstrap/cache/packages.php');
 putenv('APP_ROUTES_CACHE=/tmp/bootstrap/cache/routes.php');
 putenv('DB_DATABASE=/tmp/database.sqlite');
+putenv('APP_TIMEZONE=UTC');
+date_default_timezone_set('UTC');
 
 // 4. Panggil file public/index.php bawaan Laravel
 require __DIR__ . '/../public/index.php';

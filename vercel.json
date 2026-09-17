@@ -20,6 +20,7 @@
     "env": {
         "APP_ENV": "production",
         "APP_DEBUG": "false",
+        "APP_TIMEZONE": "UTC",
         "SESSION_DRIVER": "cookie",
         "CACHE_STORE": "array",
         "LOG_CHANNEL": "stderr"
