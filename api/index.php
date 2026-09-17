@@ -1,31 +1,25 @@
 <?php
+// 1. Buat file .env virtual di /tmp (Pasti terbaca oleh Laravel)
+$envContent = "
+APP_NAME=Laravel
+APP_ENV=production
+APP_KEY=base64:xthK6QsPEOHY21YFDOiOqMj0fPCig77zrmfrYuS5zCU=
+APP_DEBUG=true
+LOG_CHANNEL=stderr
+DB_CONNECTION=sqlite
+DB_DATABASE=/tmp/database.sqlite
+SESSION_DRIVER=cookie
+CACHE_STORE=array
+CACHE_DRIVER=array
+QUEUE_CONNECTION=sync
+FILESYSTEM_DISK=local
+VIEW_COMPILED_PATH=/tmp/storage/framework/views
+";
+file_put_contents('/tmp/.env', trim($envContent));
+
 require __DIR__ . '/../vendor/autoload.php';
 
-// 1. Paksa injeksi Environment Variables (Mengatasi Manager::createDriver() error)
-$envs = [
-    'APP_ENV' => 'production',
-    'APP_DEBUG' => 'true', // Kita hidupkan debug agar error-nya lebih jelas
-    'LOG_CHANNEL' => 'stderr',
-    'CACHE_STORE' => 'array', 
-    'CACHE_DRIVER' => 'array', // Tambahan untuk kompatibilitas
-    'SESSION_DRIVER' => 'cookie',
-    'QUEUE_CONNECTION' => 'sync',
-];
-
-foreach ($envs as $key => $value) {
-    putenv("$key=$value");
-    $_ENV[$key] = $value;
-    $_SERVER[$key] = $value;
-}
-
-if (!getenv('APP_KEY')) {
-    $appKey = 'base64:xthK6QsPEOHY21YFDOiOqMj0fPCig77zrmfrYuS5zCU=';
-    putenv("APP_KEY=$appKey");
-    $_ENV['APP_KEY'] = $appKey;
-    $_SERVER['APP_KEY'] = $appKey;
-}
-
-// 2. Siapkan direktori penyimpanan dinamis di /tmp
+// 2. Siapkan direktori penyimpanan di /tmp
 $tmpStorage = '/tmp/storage';
 $directories = [
     $tmpStorage . '/app',
@@ -34,6 +28,7 @@ $directories = [
     $tmpStorage . '/framework/testing',
     $tmpStorage . '/framework/views',
     $tmpStorage . '/logs',
+    '/tmp/bootstrap/cache'
 ];
 
 foreach ($directories as $directory) {
@@ -41,11 +36,12 @@ foreach ($directories as $directory) {
         mkdir($directory, 0777, true);
     }
 }
+
 if (!file_exists($tmpStorage . '/logs/laravel.log')) {
     @touch($tmpStorage . '/logs/laravel.log');
 }
 
-// 3. Setup Database SQLite ke /tmp
+// 3. Setup SQLite
 $sourceDb = __DIR__ . '/../database/database.sqlite';
 $targetDb = '/tmp/database.sqlite';
 if (file_exists($sourceDb) && !file_exists($targetDb)) {
@@ -54,15 +50,13 @@ if (file_exists($sourceDb) && !file_exists($targetDb)) {
     touch($targetDb);
 }
 
-putenv('DB_CONNECTION=sqlite');
-putenv('DB_DATABASE=/tmp/database.sqlite');
-$_ENV['DB_DATABASE'] = '/tmp/database.sqlite';
-
-// 4. Load inti aplikasi Laravel
+// 4. Load aplikasi
 $app = require_once __DIR__ . '/../bootstrap/app.php';
 
-// 5. Paksa Laravel menggunakan /tmp
+// 5. Beritahu Laravel untuk membaca .env dan storage dari /tmp
+$app->useEnvironmentPath('/tmp');
 $app->useStoragePath($tmpStorage);
+$app->useBootstrapPath('/tmp/bootstrap');
 
-// 6. Jalankan Request
+// 6. Jalankan request
 $app->handleRequest(Illuminate\Http\Request::capture());
