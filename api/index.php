@@ -1,25 +1,27 @@
 <?php
+require __DIR__ . '/../vendor/autoload.php';
 
-// 1. Siapkan direktori penyimpanan dinamis di /tmp (karena filesystem Vercel read-only)
-$tmpDirs = [
-    '/tmp/storage/framework/views',
-    '/tmp/storage/framework/cache',
-    '/tmp/storage/framework/sessions',
-    '/tmp/storage/logs',
-    '/tmp/bootstrap/cache',
+// 1. Siapkan direktori penyimpanan dinamis di /tmp
+$tmpStorage = '/tmp/storage';
+$directories = [
+    $tmpStorage . '/app',
+    $tmpStorage . '/framework/cache/data',
+    $tmpStorage . '/framework/sessions',
+    $tmpStorage . '/framework/testing',
+    $tmpStorage . '/framework/views',
+    $tmpStorage . '/logs',
 ];
 
-foreach ($tmpDirs as $dir) {
-    if (!is_dir($dir)) {
-        mkdir($dir, 0777, true);
+foreach ($directories as $directory) {
+    if (!is_dir($directory)) {
+        mkdir($directory, 0777, true);
     }
 }
-
-if (!file_exists('/tmp/storage/logs/laravel.log')) {
-    @touch('/tmp/storage/logs/laravel.log');
+if (!file_exists($tmpStorage . '/logs/laravel.log')) {
+    @touch($tmpStorage . '/logs/laravel.log');
 }
 
-// 2. Copy database SQLite awal ke /tmp jika belum ada
+// 2. Setup Database SQLite ke /tmp
 $sourceDb = __DIR__ . '/../database/database.sqlite';
 $targetDb = '/tmp/database.sqlite';
 if (file_exists($sourceDb) && !file_exists($targetDb)) {
@@ -27,31 +29,20 @@ if (file_exists($sourceDb) && !file_exists($targetDb)) {
 } elseif (!file_exists($targetDb)) {
     touch($targetDb);
 }
+putenv('DB_DATABASE=/tmp/database.sqlite');
+$_ENV['DB_DATABASE'] = '/tmp/database.sqlite';
 
-// 3. Set environment override untuk folder yang wajib writable
+// 3. Fallback APP_KEY (Opsional, lebih aman jika ditaruh di Dashboard Vercel)
 if (!getenv('APP_KEY')) {
     putenv('APP_KEY=base64:xthK6QsPEOHY21YFDOiOqMj0fPCig77zrmfrYuS5zCU=');
     $_ENV['APP_KEY'] = 'base64:xthK6QsPEOHY21YFDOiOqMj0fPCig77zrmfrYuS5zCU=';
 }
 
-putenv('APP_STORAGE=/tmp/storage');
-$_ENV['APP_STORAGE'] = '/tmp/storage';
+// 4. Load inti aplikasi Laravel (Bukan public/index.php)
+$app = require_once __DIR__ . '/../bootstrap/app.php';
 
-putenv('VIEW_COMPILED_PATH=/tmp/storage/framework/views');
-$_ENV['VIEW_COMPILED_PATH'] = '/tmp/storage/framework/views';
+// 5. Paksa Laravel 11 menggunakan /tmp sebagai folder utama storage
+$app->useStoragePath($tmpStorage);
 
-putenv('APP_CONFIG_CACHE=/tmp/config.php');
-putenv('APP_SERVICES_CACHE=/tmp/services.php');
-putenv('APP_PACKAGES_CACHE=/tmp/packages.php');
-putenv('APP_ROUTES_CACHE=/tmp/routes.php');
-putenv('APP_EVENTS_CACHE=/tmp/events.php');
-
-putenv('DB_DATABASE=/tmp/database.sqlite');
-$_ENV['DB_DATABASE'] = '/tmp/database.sqlite';
-
-putenv('APP_TIMEZONE=UTC');
-$_ENV['APP_TIMEZONE'] = 'UTC';
-date_default_timezone_set('UTC');
-
-// 4. Panggil file public/index.php bawaan Laravel
-require __DIR__ . '/../public/index.php';
+// 6. Jalankan Request
+$app->handleRequest(Illuminate\Http\Request::capture());
