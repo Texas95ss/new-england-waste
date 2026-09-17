@@ -20,6 +20,8 @@ $sourceDb = __DIR__ . '/../database/database.sqlite';
 $targetDb = '/tmp/database.sqlite';
 if (file_exists($sourceDb) && !file_exists($targetDb)) {
     copy($sourceDb, $targetDb);
+} elseif (!file_exists($targetDb)) {
+    touch($targetDb);
 }
 
 // 3. Set environment override untuk folder yang wajib writable
