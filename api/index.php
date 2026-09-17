@@ -11,8 +11,12 @@ $tmpDirs = [
 
 foreach ($tmpDirs as $dir) {
     if (!is_dir($dir)) {
-        mkdir($dir, 0755, true);
+        mkdir($dir, 0777, true);
     }
+}
+
+if (!file_exists('/tmp/storage/logs/laravel.log')) {
+    @touch('/tmp/storage/logs/laravel.log');
 }
 
 // 2. Copy database SQLite awal ke /tmp jika belum ada
