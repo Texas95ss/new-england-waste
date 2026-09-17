@@ -1,7 +1,31 @@
 <?php
 require __DIR__ . '/../vendor/autoload.php';
 
-// 1. Siapkan direktori penyimpanan dinamis di /tmp
+// 1. Paksa injeksi Environment Variables (Mengatasi Manager::createDriver() error)
+$envs = [
+    'APP_ENV' => 'production',
+    'APP_DEBUG' => 'true', // Kita hidupkan debug agar error-nya lebih jelas
+    'LOG_CHANNEL' => 'stderr',
+    'CACHE_STORE' => 'array', 
+    'CACHE_DRIVER' => 'array', // Tambahan untuk kompatibilitas
+    'SESSION_DRIVER' => 'cookie',
+    'QUEUE_CONNECTION' => 'sync',
+];
+
+foreach ($envs as $key => $value) {
+    putenv("$key=$value");
+    $_ENV[$key] = $value;
+    $_SERVER[$key] = $value;
+}
+
+if (!getenv('APP_KEY')) {
+    $appKey = 'base64:xthK6QsPEOHY21YFDOiOqMj0fPCig77zrmfrYuS5zCU=';
+    putenv("APP_KEY=$appKey");
+    $_ENV['APP_KEY'] = $appKey;
+    $_SERVER['APP_KEY'] = $appKey;
+}
+
+// 2. Siapkan direktori penyimpanan dinamis di /tmp
 $tmpStorage = '/tmp/storage';
 $directories = [
     $tmpStorage . '/app',
@@ -21,7 +45,7 @@ if (!file_exists($tmpStorage . '/logs/laravel.log')) {
     @touch($tmpStorage . '/logs/laravel.log');
 }
 
-// 2. Setup Database SQLite ke /tmp
+// 3. Setup Database SQLite ke /tmp
 $sourceDb = __DIR__ . '/../database/database.sqlite';
 $targetDb = '/tmp/database.sqlite';
 if (file_exists($sourceDb) && !file_exists($targetDb)) {
@@ -29,19 +53,15 @@ if (file_exists($sourceDb) && !file_exists($targetDb)) {
 } elseif (!file_exists($targetDb)) {
     touch($targetDb);
 }
+
+putenv('DB_CONNECTION=sqlite');
 putenv('DB_DATABASE=/tmp/database.sqlite');
 $_ENV['DB_DATABASE'] = '/tmp/database.sqlite';
 
-// 3. Fallback APP_KEY (Opsional, lebih aman jika ditaruh di Dashboard Vercel)
-if (!getenv('APP_KEY')) {
-    putenv('APP_KEY=base64:xthK6QsPEOHY21YFDOiOqMj0fPCig77zrmfrYuS5zCU=');
-    $_ENV['APP_KEY'] = 'base64:xthK6QsPEOHY21YFDOiOqMj0fPCig77zrmfrYuS5zCU=';
-}
-
-// 4. Load inti aplikasi Laravel (Bukan public/index.php)
+// 4. Load inti aplikasi Laravel
 $app = require_once __DIR__ . '/../bootstrap/app.php';
 
-// 5. Paksa Laravel 11 menggunakan /tmp sebagai folder utama storage
+// 5. Paksa Laravel menggunakan /tmp
 $app->useStoragePath($tmpStorage);
 
 // 6. Jalankan Request
